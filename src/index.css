@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-jungle-dark text-white antialiased;
+    font-family: 'Azeret Mono', monospace;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0d1f0a;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #7ab82b;
+    border-radius: 3px;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply bg-green-900/30 backdrop-blur-sm border border-jungle-green/30 rounded-xl;
+  }
+
+  .btn-pixel {
+    @apply px-6 py-3 font-pixel text-sm tracking-wider
+           bg-jungle-green text-jungle-dark font-bold
+           border-2 border-jungle-green
+           hover:bg-banana hover:text-jungle-dark hover:border-banana
+           active:scale-95
+           transition-all duration-150
+           rounded-lg shadow-lg shadow-jungle-green/20;
+  }
+
+  .btn-danger {
+    @apply px-6 py-3 font-pixel text-sm tracking-wider
+           bg-danger/20 text-danger border-2 border-danger/50
+           hover:bg-danger hover:text-white
+           active:scale-95
+           transition-all duration-150
+           rounded-lg;
+  }
+
+  .perk-badge {
+    @apply inline-flex items-center gap-2 px-3 py-1.5
+           bg-jungle-green/20 border border-jungle-green/40
+           rounded-full text-xs font-mono text-jungle-green;
+  }
+}

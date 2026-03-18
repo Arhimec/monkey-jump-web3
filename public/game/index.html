@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monkey Jump — BAXC Game</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Azeret+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%; height: 100%;
+      background: #0d1f0a;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+      font-family: 'Press Start 2P', monospace;
+    }
+    canvas { display: block; image-rendering: pixelated; }
+    #game-container { position: relative; }
+    #debug-overlay {
+      position: fixed; top: 0; left: 0; z-index: 99999;
+      background: rgba(0,0,0,.75); color: #0f0;
+      font: 11px/1.5 monospace; padding: 6px 10px;
+      pointer-events: none; white-space: pre;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+  </div>
+  <div id="debug-overlay">FPS: --</div>
+
+  <script>
+// ============================================================
+//  MONKEY JUMP — Web3 Edition with postMessage Perk Bridge
+// ============================================================
+
+// --- PERK SYSTEM (received from parent via postMessage) ---
+let gamePerkConfig = {
+  score_multiplier: 1.0,
+  extra_life: 0,
+  invincibility_jump: 0,
+  hitbox_forgiveness: 0,
+  banana_multiplier: 1,
+  shield_duration: 1.0,
+  low_gravity: 1.0,
+  speed_boost_duration: 1.0,
+};
+let perksReceived = false;
+let invincibleJumpsRemaining = 0;
+
+// Listen for perks from parent window
+window.addEventListener('message', function(event) {
+  // Security: verify origin matches parent
+  if (event.origin !== window.location.origin) return;
+
+  const data = event.data;
+  if (!data || typeof data !== 'object') return;
+
+  if (data.type === 'INIT_PERKS' && data.perks) {
+    gamePerkConfig = {
+      score_multiplier: data.perks.score_multiplier || 1.0,
+      extra_life: data.perks.extra_life || 0,
+      invincibility_jump: data.perks.invincibility_jump || 0,
+      hitbox_forgiveness: data.perks.hitbox_forgiveness || 0,
+      banana_multiplier: data.perks.banana_multiplier || 1,
+      shield_duration: data.perks.shield_duration || 1.0,
+      low_gravity: data.perks.low_gravity || 1.0,
+      speed_boost_duration: data.perks.speed_boost_duration || 1.0,
+    };
+    perksReceived = true;
+    invincibleJumpsRemaining = gamePerkConfig.invincibility_jump;
+  }
+});
+
+// Notify parent that game is ready
+if (window.parent !== window) {
+  window.parent.postMessage({ type: 'GAME_READY' }, '*');
+}
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// Responsive sizing
+function resize() {
+  const maxW = Math.min(window.innerWidth, 900);
+  const maxH = Math.min(window.innerHeight, 506);
+  const ratio = 900 / 506;
+  let w = maxW, h = maxW / ratio;
+  if (h > maxH) { h = maxH; w = maxH * ratio; }
+  canvas.width = 900;
+  canvas.height = 506;
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ============================================================
+//  ASSET LOADING
+// ============================================================
+const images = {};
+let assetsLoaded = 0;
+const assetList = [
+  ['bg',       './assets/jungle_bg.png'],
+  ['monkey',   './assets/monkey_sprite.png'],
+  ['banana',   './assets/banana_sprite.png'],
+  ['obstacles','./assets/obstacles_sprite.png'],
+  ['powerups', './assets/powerups_sprite.png'],
+];
+function loadAssets(cb) {
+  assetList.forEach(([key, src]) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => { assetsLoaded++; if (assetsLoaded === assetList.length) cb(); };
+    img.onerror = () => { assetsLoaded++; if (assetsLoaded === assetList.length) cb(); };
+    img.src = src;
+    images[key] = img;
+  });
+}
+
+// ============================================================
+//  AUDIO
+// ============================================================
+let audioCtx = null;
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+function playSFX(freq = 440, dur = 0.12, type = 'square', vol = 0.2) {
+  if (!audioCtx) return;
+  try {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + dur);
+  } catch(e) {}
+}
+function playJump()    { playSFX(520, 0.15, 'sine', 0.25); setTimeout(() => playSFX(700, 0.08, 'sine', 0.15), 80); }
+function playBanana()  { playSFX(880, 0.1, 'sine', 0.2); setTimeout(() => playSFX(1100, 0.08, 'sine', 0.15), 50); }
+function playHit()     { playSFX(180, 0.3, 'sawtooth', 0.3); }
+function playPowerUp() { [440,550,660,880].forEach((f,i) => setTimeout(() => playSFX(f, 0.1, 'sine', 0.2), i*60)); }
+function playGameOver(){ playSFX(300, 0.4, 'sawtooth', 0.3); setTimeout(() => playSFX(200, 0.5, 'sawtooth', 0.3), 300); }
+
+// ============================================================
+//  GAME STATE
+// ============================================================
+const GROUND_Y = 430;
+const BASE_GRAVITY = 0.6;
+const JUMP_FORCE = -14;
+const DOUBLE_JUMP_FORCE = -12;
+
+// Gravity affected by low_gravity perk
+function getGravity() {
+  return BASE_GRAVITY * gamePerkConfig.low_gravity;
+}
+
+let state = {
+  mode: 'title',
+  score: 0,
+  highScore: 0,
+  bananas: 0,
+  lives: 3,
+  speed: 4,
+  distance: 0,
+  frameCount: 0,
+  shieldActive: false,
+  shieldTimer: 0,
+  speedBoostActive: false,
+  speedBoostTimer: 0,
+  invincible: 0,
+};
+
+let player = {
+  x: 120, y: GROUND_Y,
+  w: 60, h: 60,
+  vy: 0,
+  onGround: true,
+  jumps: 0,
+  maxJumps: 2,
+  frame: 0,
+  animTimer: 0,
+};
+
+let obstacles = [];
+let collectibles = [];
+let particles = [];
+let bgX = 0;
+let bgX2 = 900;
+
+// ============================================================
+//  PARALLAX BG
+// ============================================================
+function drawBackground() {
+  if (images.bg && images.bg.complete && images.bg.naturalWidth > 0) {
+    ctx.drawImage(images.bg, bgX, 0, 900, 506);
+    ctx.drawImage(images.bg, bgX2, 0, 900, 506);
+  } else {
+    const grad = ctx.createLinearGradient(0, 0, 0, 506);
+    grad.addColorStop(0, '#1a6b2e');
+    grad.addColorStop(0.7, '#2d9b3f');
+    grad.addColorStop(1, '#4a3728');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 900, 506);
+  }
+}
+
+// ============================================================
+//  GROUND
+// ============================================================
+function drawGround() {
+  ctx.fillStyle = '#4a3728';
+  ctx.fillRect(0, GROUND_Y + 60, 900, 506 - GROUND_Y - 60);
+  ctx.fillStyle = '#5d8a1e';
+  ctx.fillRect(0, GROUND_Y + 56, 900, 8);
+  ctx.fillStyle = '#7ab82b';
+  ctx.fillRect(0, GROUND_Y + 54, 900, 6);
+}
+
+// ============================================================
+//  PLAYER RENDERING
+// ============================================================
+function drawPlayer() {
+  const p = player;
+  ctx.save();
+
+  if (state.shieldActive) {
+    ctx.save();
+    ctx.globalAlpha = 0.4 + 0.1 * Math.sin(state.frameCount * 0.2);
+    ctx.strokeStyle = '#4af0ff';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(p.x + p.w/2, p.y + p.h/2, 38, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  if (state.speedBoostActive) {
+    for (let i = 1; i <= 3; i++) {
+      ctx.save();
+      ctx.globalAlpha = 0.15 * (4 - i);
+      if (images.monkey && images.monkey.complete) {
+        const fw = images.monkey.naturalWidth / 4;
+        const fh = images.monkey.naturalHeight;
+        ctx.drawImage(images.monkey, Math.floor(p.frame) * fw, 0, fw, fh,
+          p.x - i * 18, p.y, p.w, p.h);
+      }
+      ctx.restore();
+    }
+  }
+
+  // Invincibility flicker (from hit or invincible jumps)
+  if (state.invincible > 0 && Math.floor(state.frameCount / 4) % 2 === 0) {
+    ctx.restore();
+    return;
+  }
+
+  // Invincible jump glow
+  if (invincibleJumpsRemaining > 0 && !player.onGround) {
+    ctx.save();
+    ctx.globalAlpha = 0.3 + 0.1 * Math.sin(state.frameCount * 0.3);
+    ctx.shadowColor = '#FFD700';
+    ctx.shadowBlur = 20;
+    ctx.fillStyle = '#FFD700';
+    ctx.beginPath();
+    ctx.arc(p.x + p.w/2, p.y + p.h/2, 35, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Drop shadow
+  ctx.save();
+  ctx.globalAlpha = 0.35;
+  ctx.fillStyle = '#000';
+  ctx.beginPath();
+  ctx.ellipse(p.x + p.w/2, p.y + p.h - 4, p.w*0.4, 7, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+
+  if (images.monkey && images.monkey.complete && images.monkey.naturalWidth > 0) {
+    const frameW = images.monkey.naturalWidth / 4;
+    const frameH = images.monkey.naturalHeight;
+    const frame = p.onGround ? Math.floor(p.frame) % 4 : 1;
+    ctx.save();
+    ctx.globalAlpha = 0.3;
+    ctx.filter = 'drop-shadow(0px 2px 3px rgba(0,0,0,0.9))';
+    ctx.drawImage(images.monkey, frame * frameW, 0, frameW, frameH, p.x, p.y, p.w, p.h);
+    ctx.restore();
+    ctx.drawImage(images.monkey, frame * frameW, 0, frameW, frameH, p.x, p.y, p.w, p.h);
+  } else {
+    ctx.fillStyle = '#c8854a';
+    ctx.fillRect(p.x, p.y, p.w, p.h);
+    ctx.fillStyle = '#000';
+    ctx.fillRect(p.x+15, p.y+15, 8, 8);
+    ctx.fillRect(p.x+37, p.y+15, 8, 8);
+  }
+  ctx.restore();
+}
+
+// ============================================================
+//  OBSTACLES
+// ============================================================
+const OBS_W = 52, OBS_H = 52;
+
+function spawnObstacle() {
+  const heights = [GROUND_Y, GROUND_Y - 80, GROUND_Y - 160];
+  const y = heights[Math.floor(Math.random() * heights.length)];
+  const type = Math.random() < 0.5 ? 'coconut' : 'rock';
+  obstacles.push({ x: 920, y, w: OBS_W, h: OBS_H, type });
+}
+
+function drawObstacles() {
+  obstacles.forEach(o => {
+    if (images.obstacles && images.obstacles.complete && images.obstacles.naturalWidth > 0) {
+      const half = images.obstacles.naturalWidth / 2;
+      const srcX = o.type === 'coconut' ? 0 : half;
+      ctx.drawImage(images.obstacles, srcX, 0, half, images.obstacles.naturalHeight,
+        o.x, o.y, o.w, o.h);
+    } else {
+      ctx.fillStyle = o.type === 'coconut' ? '#8B5E3C' : '#888';
+      ctx.beginPath();
+      ctx.arc(o.x + o.w/2, o.y + o.h/2, o.w/2, 0, Math.PI*2);
+      ctx.fill();
+    }
+  });
+}
+
+// ============================================================
+//  COLLECTIBLES
+// ============================================================
+function spawnCollectible() {
+  const r = Math.random();
+  let type, y;
+  if (r < 0.65) {
+    type = 'banana';
+    y = GROUND_Y - 30 - Math.random() * 120;
+  } else if (r < 0.80) {
+    type = 'star';
+    y = GROUND_Y - 60 - Math.random() * 80;
+  } else if (r < 0.90) {
+    type = 'shield';
+    y = GROUND_Y - 60 - Math.random() * 80;
+  } else {
+    type = 'boots';
+    y = GROUND_Y - 60 - Math.random() * 80;
+  }
+  collectibles.push({ x: 920, y, w: 36, h: 36, type, bob: Math.random() * Math.PI * 2 });
+}
+
+function drawCollectibles() {
+  collectibles.forEach(c => {
+    const bobY = Math.sin(c.bob + state.frameCount * 0.08) * 5;
+    ctx.save();
+    if (c.type === 'banana') {
+      if (images.banana && images.banana.complete && images.banana.naturalWidth > 0) {
+        ctx.drawImage(images.banana, c.x, c.y + bobY, c.w, c.h);
+      } else {
+        ctx.fillStyle = '#FFD700';
+        ctx.fillRect(c.x, c.y + bobY, c.w, c.h);
+      }
+    } else {
+      if (images.powerups && images.powerups.complete && images.powerups.naturalWidth > 0) {
+        const pw = images.powerups.naturalWidth / 3;
+        const ph = images.powerups.naturalHeight;
+        const idx = c.type === 'star' ? 0 : c.type === 'shield' ? 1 : 2;
+        ctx.save();
+        ctx.globalAlpha = 0.35 + 0.15 * Math.sin(state.frameCount * 0.15);
+        ctx.filter = 'blur(6px)';
+        ctx.drawImage(images.powerups, idx * pw, 0, pw, ph, c.x - 4, c.y + bobY - 4, c.w + 8, c.h + 8);
+        ctx.restore();
+        ctx.drawImage(images.powerups, idx * pw, 0, pw, ph, c.x, c.y + bobY, c.w, c.h);
+      } else {
+        const colors = { star:'#FFD700', shield:'#4af0ff', boots:'#4488ff' };
+        ctx.fillStyle = colors[c.type] || '#fff';
+        ctx.fillRect(c.x, c.y + bobY, c.w, c.h);
+      }
+    }
+    ctx.restore();
+  });
+}
+
+// ============================================================
+//  PARTICLES
+// ============================================================
+function spawnParticles(x, y, color, count = 8) {
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 / count) * i + Math.random() * 0.5;
+    const speed = 2 + Math.random() * 4;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 2,
+      life: 1.0,
+      decay: 0.03 + Math.random() * 0.03,
+      color,
+      size: 4 + Math.random() * 4,
+    });
+  }
+}
+
+function updateParticles() {
+  particles = particles.filter(p => p.life > 0);
+  particles.forEach(p => {
+    p.x += p.vx; p.y += p.vy;
+    p.vy += 0.15;
+    p.life -= p.decay;
+  });
+}
+
+function drawParticles() {
+  particles.forEach(p => {
+    ctx.save();
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x, p.y, p.size, p.size);
+    ctx.restore();
+  });
+}
+
+// ============================================================
+//  HUD
+// ============================================================
+function drawHUD() {
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,0.6)';
+  ctx.fillRect(0, 0, 900, 42);
+
+  ctx.fillStyle = '#FFD700';
+  ctx.font = '12px "Press Start 2P"';
+  ctx.fillText(`SCORE: ${state.score}`, 10, 28);
+
+  if (images.banana && images.banana.complete && images.banana.naturalWidth > 0) {
+    ctx.drawImage(images.banana, 250, 8, 24, 24);
+  }
+  ctx.fillStyle = '#fff';
+  ctx.font = '11px "Press Start 2P"';
+  ctx.fillText(`x${state.bananas}`, 280, 28);
+
+  ctx.fillStyle = '#ff4466';
+  ctx.font = '12px "Press Start 2P"';
+  ctx.fillText(`♥ x${state.lives}`, 340, 28);
+
+  ctx.fillStyle = '#aaffaa';
+  ctx.font = '9px "Press Start 2P"';
+  ctx.fillText(`SPD:${state.speed.toFixed(1)}  DIST:${Math.floor(state.distance)}m`, 500, 28);
+
+  ctx.fillStyle = '#aaa';
+  ctx.font = '9px "Press Start 2P"';
+  ctx.textAlign = 'right';
+  ctx.fillText(`BEST:${state.highScore}`, 890, 28);
+  ctx.textAlign = 'left';
+
+  // Power-up timers
+  let px = 10;
+  const iconColors = { shieldActive:'#4af0ff', speedBoostActive:'#4488ff' };
+  const iconLabels = { shieldActive:'SHIELD', speedBoostActive:'SPEED' };
+  const iconTimers = { shieldActive: state.shieldTimer, speedBoostActive: state.speedBoostTimer };
+  ['shieldActive', 'speedBoostActive'].forEach(key => {
+    if (state[key]) {
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.fillRect(px, 50, 110, 24);
+      ctx.fillStyle = iconColors[key];
+      ctx.font = '8px "Press Start 2P"';
+      ctx.fillText(`${iconLabels[key]}: ${Math.ceil(iconTimers[key]/60)}s`, px+6, 66);
+      px += 120;
+    }
+  });
+
+  // Show invincible jumps remaining
+  if (invincibleJumpsRemaining > 0) {
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillRect(px, 50, 140, 24);
+    ctx.fillStyle = '#FFD700';
+    ctx.font = '8px "Press Start 2P"';
+    ctx.fillText(`INV.JUMPS: ${invincibleJumpsRemaining}`, px+6, 66);
+  }
+
+  ctx.restore();
+}
+
+// ============================================================
+//  TITLE SCREEN
+// ============================================================
+function drawTitle() {
+  drawBackground();
+  drawGround();
+
+  ctx.fillStyle = 'rgba(0,0,0,0.55)';
+  ctx.fillRect(0, 0, 900, 506);
+
+  ctx.fillStyle = 'rgba(0,0,0,0.75)';
+  ctx.beginPath();
+  ctx.roundRect(150, 60, 600, 340, 12);
+  ctx.fill();
+  ctx.strokeStyle = '#7ab82b';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  ctx.fillStyle = '#FFD700';
+  ctx.font = '28px "Press Start 2P"';
+  ctx.textAlign = 'center';
+  ctx.fillText('MONKEY JUMP', 450, 130);
+
+  ctx.fillStyle = '#7ab82b';
+  ctx.font = '11px "Press Start 2P"';
+  ctx.fillText('BAXC Web3 Edition', 450, 160);
+
+  ctx.fillStyle = '#888';
+  ctx.font = '9px "Press Start 2P"';
+  ctx.fillText('Collect bananas · Dodge falling objects', 450, 185);
+
+  if (images.monkey && images.monkey.complete && images.monkey.naturalWidth > 0) {
+    const fw = images.monkey.naturalWidth / 4;
+    ctx.drawImage(images.monkey, 0, 0, fw, images.monkey.naturalHeight, 390, 200, 80, 80);
+  }
+
+  // Show active perks on title screen
+  if (perksReceived) {
+    ctx.fillStyle = '#7ab82b';
+    ctx.font = '8px "Press Start 2P"';
+    ctx.fillText('NFT PERKS ACTIVE', 450, 300);
+  }
+
+  ctx.fillStyle = '#fff';
+  ctx.font = '10px "Press Start 2P"';
+  ctx.fillText('SPACE / CLICK / TAP to jump', 450, 330);
+  ctx.fillText('Double jump allowed!', 450, 355);
+
+  ctx.fillStyle = '#FFD700';
+  ctx.font = '13px "Press Start 2P"';
+  const pulse = 0.7 + 0.3 * Math.sin(state.frameCount * 0.08);
+  ctx.globalAlpha = pulse;
+  ctx.fillText('— PRESS SPACE OR CLICK TO START —', 450, 395);
+  ctx.globalAlpha = 1;
+  ctx.textAlign = 'left';
+}
+
+// ============================================================
+//  GAME OVER SCREEN
+// ============================================================
+function drawGameOver() {
+  drawBackground();
+  drawGround();
+
+  ctx.fillStyle = 'rgba(0,0,0,0.65)';
+  ctx.fillRect(0, 0, 900, 506);
+
+  ctx.fillStyle = 'rgba(0,0,0,0.8)';
+  ctx.beginPath();
+  ctx.roundRect(175, 80, 550, 320, 12);
+  ctx.fill();
+  ctx.strokeStyle = '#ff4466';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  ctx.fillStyle = '#ff4466';
+  ctx.font = '28px "Press Start 2P"';
+  ctx.textAlign = 'center';
+  ctx.fillText('GAME OVER', 450, 145);
+
+  ctx.fillStyle = '#FFD700';
+  ctx.font = '12px "Press Start 2P"';
+  ctx.fillText(`SCORE: ${state.score}`, 450, 195);
+
+  if (gamePerkConfig.score_multiplier > 1) {
+    ctx.fillStyle = '#7ab82b';
+    ctx.font = '9px "Press Start 2P"';
+    ctx.fillText(`(${gamePerkConfig.score_multiplier}x multiplier applied on submit)`, 450, 215);
+  }
+
+  ctx.fillStyle = '#7ab82b';
+  ctx.font = '11px "Press Start 2P"';
+  ctx.fillText(`BANANAS: ${state.bananas}`, 450, 245);
+  ctx.fillText(`DISTANCE: ${Math.floor(state.distance)}m`, 450, 275);
+
+  ctx.fillStyle = '#aaa';
+  ctx.font = '10px "Press Start 2P"';
+  ctx.fillText(`BEST: ${state.highScore}`, 450, 310);
+
+  ctx.fillStyle = '#fff';
+  const pulse2 = 0.7 + 0.3 * Math.sin(state.frameCount * 0.1);
+  ctx.globalAlpha = pulse2;
+  ctx.font = '11px "Press Start 2P"';
+  ctx.fillText('SPACE / CLICK TO PLAY AGAIN', 450, 365);
+  ctx.globalAlpha = 1;
+  ctx.textAlign = 'left';
+}
+
+// ============================================================
+//  COLLISION DETECTION (AABB with hitbox_forgiveness perk)
+// ============================================================
+function overlaps(a, b, shrink = 0) {
+  // Apply hitbox forgiveness perk - makes the player's hitbox smaller
+  const forgiveness = gamePerkConfig.hitbox_forgiveness;
+  const totalShrink = shrink + forgiveness;
+  return a.x + totalShrink < b.x + b.w - shrink &&
+         a.x + a.w - totalShrink > b.x + shrink &&
+         a.y + totalShrink < b.y + b.h - shrink &&
+         a.y + a.h - totalShrink > b.y + shrink;
+}
+
+// ============================================================
+//  RESET GAME — applies perks
+// ============================================================
+function resetGame() {
+  state.mode = 'playing';
+  state.score = 0;
+  state.bananas = 0;
+  state.lives = 3 + gamePerkConfig.extra_life; // Apply extra lives perk
+  state.speed = 4;
+  state.distance = 0;
+  state.frameCount = 0;
+  state.shieldActive = false;
+  state.shieldTimer = 0;
+  state.speedBoostActive = false;
+  state.speedBoostTimer = 0;
+  state.invincible = 0;
+
+  // Reset invincible jumps for this round
+  invincibleJumpsRemaining = gamePerkConfig.invincibility_jump;
+
+  player.x = 120; player.y = GROUND_Y;
+  player.vy = 0; player.onGround = true;
+  player.jumps = 0; player.frame = 0;
+
+  obstacles = [];
+  collectibles = [];
+  particles = [];
+  bgX = 0; bgX2 = 900;
+}
+
+// ============================================================
+//  MAIN UPDATE
+// ============================================================
+let obstacleCooldown = 0;
+let collectibleCooldown = 0;
+
+function update(dt = 1/60) {
+  if (state.mode !== 'playing') return;
+  state.frameCount++;
+
+  const spd = state.speedBoostActive ? state.speed * 1.6 : state.speed;
+
+  bgX -= spd * 0.6;
+  bgX2 -= spd * 0.6;
+  if (bgX <= -900) bgX = bgX2 + 900;
+  if (bgX2 <= -900) bgX2 = bgX + 900;
+
+  // Player physics with low_gravity perk
+  if (!player.onGround) player.vy += getGravity();
+  player.y += player.vy;
+  if (player.y >= GROUND_Y) {
+    player.y = GROUND_Y;
+    player.vy = 0;
+    player.onGround = true;
+    player.jumps = 0;
+  }
+
+  if (player.onGround) {
+    player.animTimer += spd * 0.06;
+    player.frame = (player.animTimer) % 4;
+  }
+
+  state.distance += spd * 0.04;
+  // Apply banana_multiplier to banana score contribution
+  state.score = Math.floor(state.distance) + state.bananas * 5 * gamePerkConfig.banana_multiplier;
+
+  state.speed = 4 + Math.floor(state.distance / 100) * 0.4;
+  state.speed = Math.min(state.speed, 11);
+
+  // Shield timer with shield_duration perk (already applied when shield is picked up)
+  if (state.shieldActive) { state.shieldTimer--; if (state.shieldTimer <= 0) state.shieldActive = false; }
+  // Speed boost timer with speed_boost_duration perk (already applied when boots are picked up)
+  if (state.speedBoostActive) { state.speedBoostTimer--; if (state.speedBoostTimer <= 0) state.speedBoostActive = false; }
+  if (state.invincible > 0) state.invincible--;
+
+  // Spawn obstacles
+  obstacleCooldown--;
+  const minGap = Math.max(50, 100 - Math.floor(state.distance / 80) * 5);
+  if (obstacleCooldown <= 0) {
+    spawnObstacle();
+    obstacleCooldown = minGap + Math.floor(Math.random() * 60);
+  }
+
+  collectibleCooldown--;
+  if (collectibleCooldown <= 0) {
+    spawnCollectible();
+    collectibleCooldown = 40 + Math.floor(Math.random() * 50);
+  }
+
+  obstacles.forEach(o => { o.x -= spd; });
+  obstacles = obstacles.filter(o => o.x > -100);
+
+  collectibles.forEach(c => { c.x -= spd; });
+  collectibles = collectibles.filter(c => c.x > -100);
+
+  // Collision: obstacles
+  if (state.invincible <= 0) {
+    obstacles.forEach((o, i) => {
+      if (overlaps(player, o, 8)) {
+        // Check invincible jumps first
+        if (!player.onGround && invincibleJumpsRemaining > 0) {
+          invincibleJumpsRemaining--;
+          spawnParticles(o.x + o.w/2, o.y + o.h/2, '#FFD700', 12);
+          obstacles.splice(i, 1);
+          playSFX(600, 0.15, 'sine', 0.25);
+          state.invincible = 30; // brief invincibility after
+        } else if (state.shieldActive) {
+          state.shieldActive = false;
+          state.shieldTimer = 0;
+          spawnParticles(o.x + o.w/2, o.y + o.h/2, '#4af0ff', 12);
+          obstacles.splice(i, 1);
+          playSFX(300, 0.2, 'sine');
+        } else {
+          state.lives--;
+          state.invincible = 120;
+          spawnParticles(player.x + player.w/2, player.y + player.h/2, '#ff4466', 12);
+          playHit();
+          if (state.lives <= 0) {
+            state.mode = 'gameover';
+            if (state.score > state.highScore) state.highScore = state.score;
+            playGameOver();
+            // Send game over to parent
+            if (window.parent !== window) {
+              window.parent.postMessage({
+                type: 'GAME_OVER',
+                score: state.score,
+                bananas: state.bananas,
+                distance: Math.floor(state.distance),
+              }, '*');
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Collision: collectibles
+  collectibles.forEach((c, i) => {
+    if (overlaps(player, c, 4)) {
+      const bobY = Math.sin(c.bob + state.frameCount * 0.08) * 5;
+      if (c.type === 'banana') {
+        state.bananas++;
+        // banana_multiplier is applied in score calculation above
+        state.score += 5 * gamePerkConfig.banana_multiplier;
+        spawnParticles(c.x + c.w/2, c.y + c.h/2 + bobY, '#FFD700', 8);
+        playBanana();
+      } else if (c.type === 'star') {
+        state.score += 50;
+        spawnParticles(c.x + c.w/2, c.y + c.h/2 + bobY, '#FFD700', 12);
+        playPowerUp();
+      } else if (c.type === 'shield') {
+        state.shieldActive = true;
+        // Apply shield_duration perk
+        state.shieldTimer = Math.floor(300 * gamePerkConfig.shield_duration);
+        spawnParticles(c.x + c.w/2, c.y + c.h/2 + bobY, '#4af0ff', 12);
+        playPowerUp();
+      } else if (c.type === 'boots') {
+        state.speedBoostActive = true;
+        // Apply speed_boost_duration perk
+        state.speedBoostTimer = Math.floor(180 * gamePerkConfig.speed_boost_duration);
+        spawnParticles(c.x + c.w/2, c.y + c.h/2 + bobY, '#4488ff', 12);
+        playPowerUp();
+      }
+      collectibles.splice(i, 1);
+    }
+  });
+
+  updateParticles();
+}
+
+// ============================================================
+//  RENDER
+// ============================================================
+function render() {
+  ctx.clearRect(0, 0, 900, 506);
+  if (state.mode === 'title') {
+    drawTitle();
+  } else if (state.mode === 'gameover') {
+    drawGameOver();
+    drawPlayer();
+  } else {
+    drawBackground();
+    drawGround();
+    drawCollectibles();
+    drawObstacles();
+    drawPlayer();
+    drawParticles();
+    drawHUD();
+  }
+}
+
+// ============================================================
+//  DEBUG OVERLAY
+// ============================================================
+let _frames = 0, _last = performance.now(), _fps = 0, _ft = 0, _prev = 0;
+function updateDebug() {
+  _frames++; const n = performance.now(); _ft = n - (_prev||n); _prev = n;
+  if (n - _last >= 1000) { _fps = (_frames*1000)/(n-_last); _frames=0; _last=n; }
+}
+const dbg = document.getElementById('debug-overlay');
+function drawDebugOverlay() {
+  if (dbg.style.display !== 'none')
+    dbg.textContent = `FPS:${_fps.toFixed(0)} ${_ft.toFixed(1)}ms | mode:${state.mode} | obs:${obstacles.length} col:${collectibles.length} | invJumps:${invincibleJumpsRemaining}`;
+}
+
+// ============================================================
+//  INPUT
+// ============================================================
+function doJump() {
+  if (!audioCtx) initAudio();
+  if (state.mode === 'title') { resetGame(); return; }
+  if (state.mode === 'gameover') { resetGame(); return; }
+  if (player.jumps < player.maxJumps) {
+    player.vy = player.jumps === 0 ? JUMP_FORCE : DOUBLE_JUMP_FORCE;
+    player.onGround = false;
+    player.jumps++;
+    playJump();
+    spawnParticles(player.x + player.w/2, player.y + player.h, '#aaffaa', 6);
+  }
+}
+
+window.addEventListener('keydown', e => {
+  if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+    e.preventDefault();
+    doJump();
+  }
+  if (e.code === 'KeyD') {
+    const d = document.getElementById('debug-overlay');
+    d.style.display = d.style.display === 'none' ? 'block' : 'none';
+  }
+});
+canvas.addEventListener('pointerdown', e => { e.preventDefault(); doJump(); });
+
+// ============================================================
+//  GAME LOOP
+// ============================================================
+function loop(ts) {
+  requestAnimationFrame(loop);
+  update(1/60);
+  render();
+  updateDebug();
+  drawDebugOverlay();
+}
+
+loadAssets(() => {
+  window.appReady = true;
+  requestAnimationFrame(loop);
+});
+  </script>
+</body>
+</html>
