@@ -4,7 +4,7 @@ export const NFT_COLLECTION = 'BAXC-cdf74d';
 export const MVX_API = 'https://api.multiversx.com';
 
 // Hardcoded admin addresses — only these can access the TraitConfigModal
-export const ADMIN_ADDRESSES: string[] = [erd1xwffjdndkewljr8rdlfz0hd3jfg838q9mzhfmsdcnnym2w4yc0lsjycyzw
+export const ADMIN_ADDRESSES: string[] = ['erd1xwffjdndkewljr8rdlfz0hd3jfg838q9mzhfmsdcnnym2w4yc0lsjycyzw'
   // Add admin wallet addresses here, e.g.:
   // 'erd1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq6gq4hu',
 ];
