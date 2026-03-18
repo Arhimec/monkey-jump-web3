@@ -3,9 +3,20 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    overflow: hidden;
+    overscroll-behavior: none;
+    height: 100%;
+  }
   body {
     @apply bg-jungle-dark text-white antialiased;
     font-family: 'Azeret Mono', monospace;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+  #root {
+    height: 100%;
   }
 
   ::-webkit-scrollbar {

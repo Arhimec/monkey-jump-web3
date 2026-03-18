@@ -113,8 +113,9 @@ export function GamePage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="flex items-center justify-between px-4 py-3 bg-jungle-dark/80 border-b border-jungle-green/20">
+    // h-screen + overflow-hidden prevents any browser scroll on the game page
+    <div className="h-screen overflow-hidden flex flex-col">
+      <header className="flex items-center justify-between px-4 py-3 bg-jungle-dark/80 border-b border-jungle-green/20 flex-shrink-0">
         <div className="flex items-center gap-4">
           <h1 className="font-pixel text-sm text-banana">MONKEY JUMP</h1>
           <span className="font-mono text-xs text-gray-500">
@@ -144,7 +145,7 @@ export function GamePage() {
       </header>
 
       {activePerks.length > 0 && (
-        <div className="px-4 py-2 bg-jungle-dark/50 border-b border-jungle-green/10">
+        <div className="px-4 py-2 bg-jungle-dark/50 border-b border-jungle-green/10 flex-shrink-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-pixel text-[10px] text-gray-500">PERKS:</span>
             <PerkBadges perks={perks} activePerks={activePerks} />
@@ -152,7 +153,7 @@ export function GamePage() {
         </div>
       )}
 
-      <main className="flex-1 flex items-center justify-center p-4">
+      <main className="flex-1 flex items-center justify-center p-0 md:p-4 overflow-hidden min-h-0">
         <MonkeyGame
           perks={perks}
           address={address}
@@ -162,7 +163,7 @@ export function GamePage() {
       </main>
 
       {lastScore && (
-        <div className="px-4 py-2 bg-jungle-dark/80 border-t border-jungle-green/20 text-center">
+        <div className="px-4 py-2 bg-jungle-dark/80 border-t border-jungle-green/20 text-center flex-shrink-0">
           <span className="font-pixel text-xs text-banana">
             Last: {Math.floor(lastScore.score * perks.score_multiplier).toLocaleString()} pts
           </span>
