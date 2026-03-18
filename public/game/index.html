@@ -152,7 +152,7 @@ function playGameOver(){ playSFX(300, 0.4, 'sawtooth', 0.3); setTimeout(() => pl
 // ============================================================
 //  GAME STATE
 // ============================================================
-const GROUND_Y = 430;
+const GROUND_Y = 340; // sprite top; feet at GROUND_Y+120=460 rest on grass
 const BASE_GRAVITY = 0.6;
 const JUMP_FORCE = -14;
 const DOUBLE_JUMP_FORCE = -12;
@@ -179,8 +179,8 @@ let state = {
 };
 
 let player = {
-  x: 120, y: GROUND_Y,
-  w: 60, h: 60,
+  x: 80, y: GROUND_Y,
+  w: 120, h: 120,
   vy: 0,
   onGround: true,
   jumps: 0,
@@ -210,18 +210,28 @@ function drawBackground() {
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 900, 506);
   }
+  // Wash / fog overlay — improves contrast for monkey, bananas and obstacles
+  // Lighter upper sky, slightly darker near ground to keep ground readable
+  const washGrad = ctx.createLinearGradient(0, 0, 0, 506);
+  washGrad.addColorStop(0,   'rgba(255,255,255,0.28)');
+  washGrad.addColorStop(0.6, 'rgba(255,255,255,0.22)');
+  washGrad.addColorStop(1,   'rgba(0,0,0,0.10)');
+  ctx.fillStyle = washGrad;
+  ctx.fillRect(0, 0, 900, 506);
 }
 
 // ============================================================
 //  GROUND
 // ============================================================
 function drawGround() {
-  ctx.fillStyle = '#4a3728';
-  ctx.fillRect(0, GROUND_Y + 60, 900, 506 - GROUND_Y - 60);
+  // Grass line at y=460
+  const gfY = 460;
+  ctx.fillStyle = '#3a2a1a';
+  ctx.fillRect(0, gfY + 6, 900, 506 - gfY - 6);
   ctx.fillStyle = '#5d8a1e';
-  ctx.fillRect(0, GROUND_Y + 56, 900, 8);
+  ctx.fillRect(0, gfY + 2, 900, 8);
   ctx.fillStyle = '#7ab82b';
-  ctx.fillRect(0, GROUND_Y + 54, 900, 6);
+  ctx.fillRect(0, gfY, 900, 6);
 }
 
 // ============================================================
@@ -237,7 +247,7 @@ function drawPlayer() {
     ctx.strokeStyle = '#4af0ff';
     ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.arc(p.x + p.w/2, p.y + p.h/2, 38, 0, Math.PI * 2);
+    ctx.arc(p.x + p.w/2, p.y + p.h/2, 72, 0, Math.PI * 2);
     ctx.stroke();
     ctx.restore();
   }
@@ -270,7 +280,7 @@ function drawPlayer() {
     ctx.shadowBlur = 20;
     ctx.fillStyle = '#FFD700';
     ctx.beginPath();
-    ctx.arc(p.x + p.w/2, p.y + p.h/2, 35, 0, Math.PI * 2);
+    ctx.arc(p.x + p.w/2, p.y + p.h/2, 68, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
@@ -280,7 +290,7 @@ function drawPlayer() {
   ctx.globalAlpha = 0.35;
   ctx.fillStyle = '#000';
   ctx.beginPath();
-  ctx.ellipse(p.x + p.w/2, p.y + p.h - 4, p.w*0.4, 7, 0, 0, Math.PI*2);
+  ctx.ellipse(p.x + p.w/2, p.y + p.h - 2, p.w*0.38, 10, 0, 0, Math.PI*2);
   ctx.fill();
   ctx.restore();
 
@@ -288,11 +298,12 @@ function drawPlayer() {
     const frameW = images.monkey.naturalWidth / 4;
     const frameH = images.monkey.naturalHeight;
     const frame = p.onGround ? Math.floor(p.frame) % 4 : 1;
+    // Strong outline: draw the sprite 4× offset in black for a crisp border
     ctx.save();
-    ctx.globalAlpha = 0.3;
-    ctx.filter = 'drop-shadow(0px 2px 3px rgba(0,0,0,0.9))';
+    ctx.filter = 'drop-shadow(0px 0px 6px rgba(0,0,0,1)) drop-shadow(0px 0px 12px rgba(0,0,0,0.8))';
     ctx.drawImage(images.monkey, frame * frameW, 0, frameW, frameH, p.x, p.y, p.w, p.h);
     ctx.restore();
+    // Main sprite on top — crisp and full opacity
     ctx.drawImage(images.monkey, frame * frameW, 0, frameW, frameH, p.x, p.y, p.w, p.h);
   } else {
     ctx.fillStyle = '#c8854a';
@@ -307,7 +318,7 @@ function drawPlayer() {
 // ============================================================
 //  OBSTACLES
 // ============================================================
-const OBS_W = 52, OBS_H = 52;
+const OBS_W = 58, OBS_H = 58;
 
 function spawnObstacle() {
   const heights = [GROUND_Y, GROUND_Y - 80, GROUND_Y - 160];
