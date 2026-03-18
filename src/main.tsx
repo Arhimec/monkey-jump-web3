@@ -9,6 +9,7 @@ initApp({
   dAppConfig: {
     environment: EnvironmentsEnum.mainnet,
     nativeAuth: { expirySeconds: 86400 },
+    walletConnectV2ProjectId: 'fd3049c565c6078ab9dff1e313ee7eef',
   },
 }).then(() => {
   createRoot(document.getElementById('root')!).render(<App />);
