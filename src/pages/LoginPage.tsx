@@ -2,8 +2,6 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGetIsLoggedIn } from '@multiversx/sdk-dapp/out/react/account/useGetIsLoggedIn';
 import { UnlockPanelManager } from '@multiversx/sdk-dapp/out/managers/UnlockPanelManager';
-import { ProviderFactory } from '@multiversx/sdk-dapp/out/providers/ProviderFactory';
-import type { IProviderFactory } from '@multiversx/sdk-dapp/out/providers/types/providerFactory.types';
 
 export function LoginPage() {
   const isLoggedIn = useGetIsLoggedIn();
@@ -16,17 +14,13 @@ export function LoginPage() {
 
   // Open the sdk-dapp native unlock panel — it handles WalletConnect QR
   // inside its own side-panel modal and dismisses itself after login.
+  // We pass a plain callback (LoginCallbackType) — the panel handles the full
+  // provider creation and login internally. Passing a LoginFunctionType that
+  // calls ProviderFactory.create() would double-initialise WalletConnect core.
   const openPanel = () => {
     UnlockPanelManager.init({
-      // loginHandler receives the provider type + anchor from the panel UI
-      loginHandler: async ({ type, anchor }: IProviderFactory) => {
-        const provider = await ProviderFactory.create({ type, anchor });
-        await provider?.login();
-        navigate('/game');
-      },
-      onClose: async () => {
-        // panel closed without completing login — nothing to do
-      },
+      loginHandler: () => navigate('/game'),
+      onClose: async () => { /* closed without login */ },
     }).openUnlockPanel();
   };
 
