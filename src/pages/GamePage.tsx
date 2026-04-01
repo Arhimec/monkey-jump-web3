@@ -8,6 +8,7 @@ import { useLeaderboard } from '../hooks/useLeaderboard';
 import { PerkBadges } from '../components/PerkBadges';
 import { TraitConfigModal } from '../components/TraitConfigModal';
 import { MonkeyGame } from '../game/MonkeyGame';
+import { GameOverModal } from '../components/GameOverModal';
 import { ADMIN_ADDRESSES } from '../config';
 import type { GameOverData } from '../types';
 
@@ -47,6 +48,15 @@ export function GamePage() {
       // ignore
     }
     navigate('/');
+  };
+
+  const handleNewGame = () => {
+    // Send message to iframe to restart
+    const iframe = document.querySelector('iframe');
+    if (iframe?.contentWindow) {
+      iframe.contentWindow.postMessage({ type: 'RESTART_GAME' }, window.location.origin);
+    }
+    setLastScore(null);
   };
 
   if (loading) {
@@ -207,6 +217,16 @@ export function GamePage() {
       )}
 
       <TraitConfigModal isOpen={showConfig} onClose={() => setShowConfig(false)} />
+      
+      {lastScore && (
+        <GameOverModal
+          isOpen={!!lastScore}
+          data={lastScore}
+          perks={perks}
+          onNewGame={handleNewGame}
+          onReturnToMenu={() => navigate('/')}
+        />
+      )}
     </div>
   );
 }

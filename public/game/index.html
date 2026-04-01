@@ -165,6 +165,9 @@ window.addEventListener('message', function(event) {
     perksReceived = true;
     invincibleJumpsRemaining = gamePerkConfig.invincibility_jump;
   }
+  if (data.type === 'RESTART_GAME') {
+    resetGame();
+  }
 });
 
 if (window.parent !== window) {
@@ -713,11 +716,7 @@ function drawGameOver() {
   ctx.fillStyle = '#aaa';
   ctx.font = '10px "Press Start 2P"';
   ctx.fillText(`BEST: ${state.highScore}`, 450, 310);
-  ctx.fillStyle = '#fff';
-  const pulse2 = 0.7 + 0.3 * Math.sin(state.frameCount * 0.1);
-  ctx.globalAlpha = pulse2;
-  ctx.font = '11px "Press Start 2P"';
-  ctx.fillText('TAP / SPACE TO PLAY AGAIN', 450, 365);
+  // Removed "TAP / SPACE TO PLAY AGAIN" as it's now handled by the React modal
   ctx.globalAlpha = 1;
   ctx.textAlign = 'left';
 }
@@ -942,7 +941,7 @@ function drawDebugOverlay() {
 function doJump() {
   if (!audioCtx) initAudio();
   if (state.mode === 'title')    { resetGame(); return; }
-  if (state.mode === 'gameover') { resetGame(); return; }
+  if (state.mode === 'gameover') { /* resetGame() handled by modal */ return; }
   if (player.jumps < player.maxJumps) {
     player.vy = player.jumps === 0 ? JUMP_FORCE : DOUBLE_JUMP_FORCE;
     player.onGround = false;
