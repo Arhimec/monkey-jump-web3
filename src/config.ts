@@ -9,6 +9,7 @@ export const ADMIN_ADDRESSES: string[] = ['erd1xwffjdndkewljr8rdlfz0hd3jfg838q9m
   // 'erd1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq6gq4hu',
 ];
 
+
 export const PERK_DEFAULTS: PlayerPerks = {
   score_multiplier: 1.0,
   extra_life: 0,
