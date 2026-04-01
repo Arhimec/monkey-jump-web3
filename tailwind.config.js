@@ -4,17 +4,27 @@ export default {
   theme: {
     extend: {
       colors: {
-        jungle: {
-          dark: '#0d1f0a',
-          green: '#7ab82b',
-          deep: '#1a3a0e',
+        gold: {
+          light: '#F5E6BE',
+          DEFAULT: '#D4AF37',
+          dark: '#996515',
+          glow: '#FFD700',
         },
-        banana: '#FFD700',
-        danger: '#ff4466',
+        charcoal: {
+          light: '#262626',
+          DEFAULT: '#1A1A1A',
+          dark: '#0D0D0D',
+        },
+        danger: '#FF4136',
       },
       fontFamily: {
-        pixel: ['"Press Start 2P"', 'monospace'],
+        sans: ['"Outfit"', 'sans-serif'],
+        pixel: ['"Press Start 2P"', 'cursive'],
         mono: ['"Azeret Mono"', 'monospace'],
+      },
+      backgroundImage: {
+        'gold-gradient': 'linear-gradient(135deg, #D4AF37 0%, #996515 100%)',
+        'dark-gradient': 'linear-gradient(180deg, #1A1A1A 0%, #0D0D0D 100%)',
       },
     },
   },

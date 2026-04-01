@@ -51,12 +51,13 @@ export function GamePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin w-8 h-8 border-2 border-jungle-green border-t-transparent rounded-full mx-auto mb-4" />
-          <p className="font-pixel text-sm text-jungle-green">Checking NFTs...</p>
-          <p className="font-mono text-xs text-gray-500 mt-2">
-            {address ? `${address.slice(0, 8)}...${address.slice(-6)}` : ''}
+      <div className="min-h-screen flex items-center justify-center bg-charcoal-dark">
+        <div className="text-center relative">
+          <div className="absolute inset-0 bg-gold/10 blur-3xl rounded-full scale-110" />
+          <div className="animate-spin w-10 h-10 border-2 border-gold border-t-transparent rounded-full mx-auto mb-6 relative z-10" />
+          <p className="font-pixel text-[10px] text-gold tracking-widest relative z-10">VERIFYING NFT DATA</p>
+          <p className="font-mono text-[9px] text-gray-500 mt-3 relative z-10 uppercase tracking-tight">
+            {address ? `${address.slice(0, 10)}...${address.slice(-10)}` : ''}
           </p>
         </div>
       </div>
@@ -65,12 +66,12 @@ export function GamePage() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="glass-panel p-8 max-w-md w-full text-center">
-          <div className="text-danger font-pixel text-lg mb-4">Error</div>
-          <p className="font-mono text-sm text-gray-400 mb-6">{error}</p>
-          <button onClick={() => window.location.reload()} className="btn-pixel">
-            Retry
+      <div className="min-h-screen flex items-center justify-center px-4 bg-charcoal-dark">
+        <div className="glass-panel p-10 max-w-md w-full text-center border-danger/20">
+          <div className="text-danger font-pixel text-xs mb-6 uppercase tracking-widest">System Error</div>
+          <p className="font-mono text-sm text-gray-400 mb-8 leading-relaxed opacity-80">{error}</p>
+          <button onClick={() => window.location.reload()} className="btn-pixel w-full py-4">
+            Reload System
           </button>
         </div>
       </div>
@@ -79,32 +80,41 @@ export function GamePage() {
 
   if (!hasAccess) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="glass-panel p-8 max-w-md w-full text-center">
-          <div className="text-danger font-pixel text-xl mb-4">Access Denied</div>
-          <img
-            src="/game/assets/monkey_sprite.png"
-            alt="Monkey"
-            className="w-16 h-16 mx-auto mb-4 opacity-30 grayscale"
-            style={{ imageRendering: 'pixelated' }}
-          />
-          <p className="font-mono text-sm text-gray-400 mb-2">
-            You need a BAXC NFT to play
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-charcoal-dark relative overflow-hidden">
+        {/* Access Denied Background */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,65,54,0.05)_0%,transparent_70%)]" />
+        
+        <div className="glass-panel p-10 md:p-14 max-w-md w-full text-center relative border-danger/20">
+          <div className="text-danger font-pixel text-lg mb-8 uppercase tracking-widest">Access Denied</div>
+          
+          <div className="mb-8 relative inline-block">
+            <div className="absolute inset-0 bg-danger/10 blur-2xl rounded-full scale-125 opacity-30" />
+            <img
+              src="/game/assets/monkey_sprite.png"
+              alt="Monkey"
+              className="w-20 h-20 mx-auto opacity-30 grayscale relative z-10"
+              style={{ imageRendering: 'pixelated', objectFit: 'none', objectPosition: '0 0' }}
+            />
+          </div>
+          
+          <p className="font-mono text-sm text-gray-400 mb-2 font-light">
+            Exclusive entry for <span className="text-white font-medium italic">BAXC Holders</span>
           </p>
-          <p className="font-mono text-xs text-gray-600 mb-6">
-            Collection: BAXC-cdf74d
+          <p className="font-mono text-[10px] text-gray-600 mb-10 tracking-[0.2em]">
+            COLLECTION: BAXC-cdf74d
           </p>
-          <div className="flex gap-3 justify-center">
+          
+          <div className="grid grid-cols-1 gap-4">
             <a
               href="https://xoxno.com/collection/BAXC-cdf74d"
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-pixel"
+              className="btn-pixel py-4"
             >
-              Get BAXC
+              Acquire Pass (NFT)
             </a>
-            <button onClick={handleLogout} className="btn-danger">
-              Disconnect
+            <button onClick={handleLogout} className="btn-danger py-4 font-mono text-[10px] uppercase">
+              Exit Terminal
             </button>
           </div>
         </div>
@@ -113,63 +123,86 @@ export function GamePage() {
   }
 
   return (
-    // h-screen + overflow-hidden prevents any browser scroll on the game page
-    <div className="h-screen overflow-hidden flex flex-col">
-      <header className="flex items-center justify-between px-4 py-3 bg-jungle-dark/80 border-b border-jungle-green/20 flex-shrink-0">
-        <div className="flex items-center gap-4">
-          <h1 className="font-pixel text-sm text-banana">MONKEY JUMP</h1>
-          <span className="font-mono text-xs text-gray-500">
-            {herotag ? `@${herotag}` : `${address.slice(0, 8)}...${address.slice(-6)}`}
+    <div className="h-screen overflow-hidden flex flex-col bg-charcoal-dark">
+      {/* Header */}
+      <header className="flex items-center justify-between px-6 py-4 bg-charcoal-dark border-b border-gold/10 flex-shrink-0 z-20">
+        <div className="flex items-center gap-6">
+          <h1 className="font-pixel text-[10px] text-gold gold-glow tracking-tighter">BAXC / ASCENT</h1>
+          <div className="hidden sm:flex h-4 w-px bg-gold/10" />
+          <span className="hidden sm:inline font-mono text-[10px] text-gray-500 tracking-wider">
+            {herotag ? `@${herotag}` : `${address.slice(0, 10)}...${address.slice(-10)}`}
           </span>
         </div>
-        <div className="flex items-center gap-3">
+        
+        <div className="flex items-center gap-4">
           {isAdmin && (
             <button
               onClick={() => setShowConfig(true)}
-              className="font-mono text-xs text-gray-400 hover:text-jungle-green transition-colors"
-              title="Admin: Configure Traits"
+              className="font-mono text-[9px] text-gray-500 hover:text-gold transition-colors uppercase tracking-[0.1em]"
+              title="Admin Terminal"
             >
-              [Config]
+              [Admin]
             </button>
           )}
           <button
             onClick={() => navigate('/leaderboard')}
-            className="font-mono text-xs text-gray-400 hover:text-banana transition-colors"
+            className="font-mono text-[9px] text-gray-500 hover:text-gold transition-colors uppercase tracking-[0.1em]"
           >
-            Leaderboard
+            Hall of Fame
           </button>
-          <button onClick={handleLogout} className="font-mono text-xs text-gray-400 hover:text-danger transition-colors">
-            Disconnect
+          <button 
+            onClick={handleLogout} 
+            className="font-mono text-[9px] text-gray-500 hover:text-danger transition-colors uppercase tracking-[0.1em]"
+          >
+            Log Out
           </button>
         </div>
       </header>
 
+      {/* Perks Ribbon */}
       {activePerks.length > 0 && (
-        <div className="px-4 py-2 bg-jungle-dark/50 border-b border-jungle-green/10 flex-shrink-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-pixel text-[10px] text-gray-500">PERKS:</span>
+        <div className="px-6 py-2 bg-gold/5 border-b border-gold/10 flex-shrink-0 z-10 overflow-x-auto">
+          <div className="flex items-center gap-4 min-w-max">
+            <span className="font-pixel text-[8px] text-gold/40 tracking-wider">ACTIVE PERKS</span>
+            <div className="h-3 w-px bg-gold/10" />
             <PerkBadges perks={perks} activePerks={activePerks} />
           </div>
         </div>
       )}
 
-      <main className="flex-1 flex items-center justify-center p-0 md:p-4 overflow-hidden min-h-0">
-        <MonkeyGame
-          perks={perks}
-          address={address}
-          herotag={herotag}
-          onGameOver={handleGameOver}
-        />
+      {/* Game Viewport */}
+      <main className="flex-1 relative flex items-center justify-center p-0 md:p-6 overflow-hidden min-h-0 z-0">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(212,175,55,0.02)_0%,transparent_80%)] pointer-events-none" />
+        <div className="w-full h-full max-w-3xl max-h-[900px] shadow-[0_0_100px_rgba(0,0,0,0.5)] border-x md:border border-gold/10 md:rounded-2xl overflow-hidden relative">
+          <MonkeyGame
+            perks={perks}
+            address={address}
+            herotag={herotag}
+            onGameOver={handleGameOver}
+          />
+        </div>
       </main>
 
+      {/* Footer / Stats */}
       {lastScore && (
-        <div className="px-4 py-2 bg-jungle-dark/80 border-t border-jungle-green/20 text-center flex-shrink-0">
-          <span className="font-pixel text-xs text-banana">
-            Last: {Math.floor(lastScore.score * perks.score_multiplier).toLocaleString()} pts
-          </span>
-          <span className="font-mono text-xs text-gray-500 ml-4">
-            🍌 {lastScore.bananas} &middot; {lastScore.distance}m
-          </span>
+        <div className="px-6 py-4 bg-charcoal-dark border-t border-gold/10 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-10 flex-shrink-0 z-20">
+          <div className="flex items-center gap-3">
+             <span className="font-pixel text-[9px] text-gold/40 tracking-widest uppercase">Last Score</span>
+             <span className="font-pixel text-[11px] text-gold gold-glow">
+               {Math.floor(lastScore.score * perks.score_multiplier).toLocaleString()}
+             </span>
+          </div>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">🍌</span>
+              <span className="font-mono text-xs text-white/70">{lastScore.bananas}</span>
+            </div>
+            <div className="h-4 w-px bg-gold/10" />
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-[10px] text-gray-500 uppercase">Ascent</span>
+              <span className="font-mono text-xs text-white/70">{lastScore.distance}m</span>
+            </div>
+          </div>
         </div>
       )}
 

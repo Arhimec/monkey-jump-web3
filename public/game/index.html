@@ -7,33 +7,31 @@
   <meta name="mobile-web-app-capable" content="yes">
   <title>Monkey Jump — BAXC Game</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Azeret+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Outfit:wght@400;600&family=Azeret+Mono:wght@400;700&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html {
       width: 100%; height: 100%;
-      /* Prevent ALL browser scroll/bounce */
       overflow: hidden;
       overscroll-behavior: none;
     }
     body {
       width: 100%; height: 100%;
-      background: #0d1f0a;
+      background: #0D0D0D;
       display: flex; align-items: center; justify-content: center;
       overflow: hidden;
       overscroll-behavior: none;
-      touch-action: none;          /* kills pan/pinch/scroll at OS level */
+      touch-action: none;
       -webkit-overflow-scrolling: auto;
-      font-family: 'Press Start 2P', monospace;
-      /* Safe-area insets for notched phones */
+      font-family: 'Outfit', sans-serif;
       padding: env(safe-area-inset-top)   env(safe-area-inset-right)
                env(safe-area-inset-bottom) env(safe-area-inset-left);
     }
     canvas {
       display: block;
       image-rendering: pixelated;
-      /* Touch events on canvas shouldn't trigger browser gestures */
       touch-action: none;
+      filter: drop-shadow(0 0 20px rgba(0,0,0,0.5));
     }
     #game-container {
       position: relative;
@@ -45,17 +43,18 @@
     }
     /* ---- Mobile jump button ---- */
     #jump-btn {
-      display: none; /* shown by JS on touch devices */
+      display: none;
       position: fixed;
-      bottom: max(20px, env(safe-area-inset-bottom, 20px));
-      right: 20px;
-      width: 72px;
-      height: 72px;
+      bottom: max(30px, env(safe-area-inset-bottom, 30px));
+      right: 30px;
+      width: 80px;
+      height: 80px;
       border-radius: 50%;
-      background: rgba(122, 184, 43, 0.25);
-      border: 3px solid rgba(122, 184, 43, 0.7);
-      color: #FFD700;
-      font-size: 28px;
+      background: rgba(212, 175, 55, 0.15);
+      backdrop-filter: blur(8px);
+      border: 3px solid rgba(212, 175, 55, 0.4);
+      color: #D4AF37;
+      font-size: 32px;
       line-height: 1;
       cursor: pointer;
       z-index: 100;
@@ -65,32 +64,53 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: background 0.1s, transform 0.08s;
+      transition: all 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      box-shadow: 0 0 20px rgba(0,0,0,0.3), inset 0 0 10px rgba(212,175,55,0.1);
     }
-    #jump-btn:active { background: rgba(122,184,43,0.55); transform: scale(0.92); }
+    #jump-btn:active { 
+      background: rgba(212, 175, 55, 0.4); 
+      transform: scale(0.9);
+      border-color: #D4AF37;
+    }
+
     /* Landscape portrait hint overlay */
     #landscape-hint {
       display: none;
       position: fixed; inset: 0;
-      background: rgba(13,31,10,0.92);
+      background: rgba(13,13,13,0.95);
       z-index: 9999;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       text-align: center;
-      gap: 16px;
-      /* IMPORTANT: pointer-events:none so the game is still tappable behind it */
+      gap: 24px;
       pointer-events: none;
+      backdrop-filter: blur(10px);
     }
     #landscape-hint.active { display: flex; }
-    #landscape-hint .icon { font-size: 56px; animation: spin 2s linear infinite; }
-    @keyframes spin { 0%{transform:rotate(0deg)} 50%{transform:rotate(90deg)} 100%{transform:rotate(90deg)} }
-    #landscape-hint p { font-family:'Press Start 2P',monospace; font-size:10px; color:#7ab82b; line-height:1.8; }
+    #landscape-hint .icon { 
+      font-size: 64px; 
+      animation: rotate-hint 2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+      filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.3));
+    }
+    @keyframes rotate-hint { 
+      0%{transform:rotate(0deg)} 
+      50%{transform:rotate(90deg)} 
+      100%{transform:rotate(90deg)} 
+    }
+    #landscape-hint p { 
+      font-family: 'Press Start 2P', monospace; 
+      font-size: 10px; 
+      color: #D4AF37; 
+      line-height: 2;
+      letter-spacing: 1px;
+    }
+
     #debug-overlay {
       position: fixed; top: 0; left: 0; z-index: 99999;
-      background: rgba(0,0,0,.75); color: #0f0;
-      font: 11px/1.5 monospace; padding: 6px 10px;
-      pointer-events: none; white-space: pre;
+      background: rgba(0,0,0,.85); color: #D4AF37;
+      font: 10px/1.5 'Azeret Mono', monospace; padding: 8px 12px;
+      pointer-events: none; white-space: pre; border-bottom-right-radius: 8px;
       display: none;
     }
   </style>
