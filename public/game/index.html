@@ -314,6 +314,7 @@ let player = {
   animAccum: 0,          // frame accumulator
   FPS: 8,                // animation frames per second
   landBounce: 0,         // brief squash on landing (0-1)
+  landBounceVel: 0,      // velocity for elastic landing
 };
 
 let obstacles    = [];
@@ -447,19 +448,20 @@ function drawPlayer() {
     let drawY = p.y;
 
     if (!p.onGround) {
-      // Stretch: taller by up to 12px, narrower by 8px
-      const t = Math.min(Math.abs(p.vy) / 14, 1); // 0→1 as vy increases
-      drawW = p.w - 8  * t;
-      drawH = p.h + 12 * t;
+      // Smoother Stretch: taller by up to 15px, narrower by 10px
+      // Also depends on vertical velocity for a dynamic feel
+      const stretch = Math.min(Math.abs(p.vy) / 15, 1.2);
+      drawW = p.w - 10 * stretch;
+      drawH = p.h + 15 * stretch;
       drawX = p.x + (p.w - drawW) / 2;
-      drawY = p.y;              // keep feet in same place
+      drawY = p.y;
     } else if (p.landBounce > 0) {
-      // Squash on landing
-      const b = p.landBounce;
-      drawW = p.w + 14 * b;
-      drawH = p.h - 10 * b;
+      // squash on landing: wider, shorter
+      const bounce = p.landBounce;
+      drawW = p.w + 16 * bounce;
+      drawH = p.h - 12 * bounce;
       drawX = p.x - (drawW - p.w) / 2;
-      drawY = p.y + (p.h - drawH); // keep feet on ground
+      drawY = p.y + (p.h - drawH);
     }
 
     // Draw with drop-shadow for pop
@@ -797,16 +799,25 @@ function update(dt) {
   }
 
   // Decay landing squash
-  if (player.landBounce > 0) {
-    player.landBounce = Math.max(0, player.landBounce - 0.12);
+  // Decay landing squash with simple spring-like damping
+  if (player.landBounce > 0 || player.landBounceVel !== 0) {
+    const k = 0.15; // stiffness
+    const d = 0.82; // damping
+    player.landBounceVel += (0 - player.landBounce) * k;
+    player.landBounceVel *= d;
+    player.landBounce += player.landBounceVel;
+    // if very small, just reset
+    if (Math.abs(player.landBounce) < 0.01 && Math.abs(player.landBounceVel) < 0.01) {
+      player.landBounce = 0; player.landBounceVel = 0;
+    }
   }
 
-  // Run animation — 8 fps, time-based
+  // High-fidelity Run animation — higher FPS, perfectly synced with speed
   if (player.onGround) {
-    player.animAccum += spd * dt;          // distance-based so it matches foot speed
-    // advance one sprite frame every ~0.125s at normal speed
-    const step = spd * 0.018;
-    player.animAccum += step;
+    // base speed is 4, top speed is 11. Scale animation frequency (dt-based)
+    // 0.18 factor at speed 4 gives ~12 FPS
+    const animRate = spd * 1.8;
+    player.animAccum += animRate * dt;
     if (player.animAccum >= 1) {
       player.animAccum -= 1;
       player.animFrame = (player.animFrame + 1) % 4;
@@ -954,7 +965,8 @@ function doJump() {
     player.vy = player.jumps === 0 ? JUMP_FORCE : DOUBLE_JUMP_FORCE;
     player.onGround = false;
     player.jumps++;
-    player.landBounce = 0; // cancel any squash if jumping again
+    player.landBounce = -0.4; // brief stretch when jumping
+    player.landBounceVel = 0;
     playJump();
     spawnParticles(player.x + player.w/2, player.y + player.h, '#aaffaa', 6);
   }
