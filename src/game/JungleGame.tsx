@@ -1,14 +1,18 @@
 import { useRef, useEffect, useCallback } from 'react';
 import type { PlayerPerks, GameOverData } from '../types';
 
-interface MonkeyGameProps {
+interface JungleGameProps {
   perks: PlayerPerks;
   address: string;
   herotag: string | null;
   onGameOver: (data: GameOverData) => void;
 }
 
-export function MonkeyGame({ perks, address, herotag, onGameOver }: MonkeyGameProps) {
+/**
+ * JungleGame — The BAXC Jungle iframe bridge.
+ * Communicates with the core game engine via postMessage protocol.
+ */
+export function JungleGame({ perks, address, herotag, onGameOver }: JungleGameProps) {
   const iframeRef  = useRef<HTMLIFrameElement>(null);
   const perksRef   = useRef(perks);
   perksRef.current = perks;
@@ -61,7 +65,7 @@ export function MonkeyGame({ perks, address, herotag, onGameOver }: MonkeyGamePr
           src="/game/index.html"
           className="w-full h-full border-0 rounded-xl"
           style={{ display: 'block' }}
-          title="Monkey Jump Game"
+          title="BAXC Jungle Game"
           onLoad={sendPerks}
           allow="autoplay"
         />

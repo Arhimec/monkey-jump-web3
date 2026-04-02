@@ -1,4 +1,4 @@
-# Monkey Jump — BAXC Web3 Edition
+# BAXC Jungle — Web3 Arena
 
 A blockchain-gated arcade game for **BAXC NFT holders** on MultiversX. Players connect their xPortal wallet, verify NFT ownership, and enjoy trait-based in-game perks derived from their NFT metadata.
 
@@ -43,7 +43,7 @@ The `api/scores.js` endpoint uses an in-memory array (resets on Vercel cold star
 import { MongoClient } from 'mongodb';
 
 const client = new MongoClient(process.env.MONGODB_URI);
-const db = client.db('monkeyjump');
+const db = client.db('baxcjungle');
 const collection = db.collection('scores');
 
 // GET: await collection.find().sort({ score: -1 }).limit(limit).toArray()
@@ -144,14 +144,14 @@ import { kv } from '@vercel/kv';
 
 - **Frontend**: React 18 + Vite + TypeScript
 - **Blockchain**: @multiversx/sdk-dapp v5 + @multiversx/sdk-core v15
-- **Game Engine**: Vanilla Canvas (adapted from Monkey Jump)
+- **Game Engine**: Vanilla Canvas (adapted from BAXC Jungle)
 - **Styling**: Tailwind CSS v3
 - **Backend**: Vercel Serverless Functions (Node.js 20)
 
 ## Project Structure
 
 ```
-monkey-jump-web3/
+baxc-jungle-web3/
 ├── index.html                  # Entry HTML
 ├── package.json
 ├── vite.config.ts
@@ -175,7 +175,7 @@ monkey-jump-web3/
 │   │   ├── useNFTGate.ts       # NFT fetch + perk computation
 │   │   └── useLeaderboard.ts   # Score CRUD
 │   └── game/
-│       └── MonkeyGame.tsx      # iframe bridge (postMessage)
+│       └── JungleGame.tsx      # iframe bridge (postMessage)
 ├── public/game/
 │   ├── index.html              # Standalone game (perk-aware)
 │   └── assets/                 # Sprites

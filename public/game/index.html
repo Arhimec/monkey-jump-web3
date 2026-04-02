@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <title>Monkey Jump — BAXC Game</title>
+  <title>BAXC Jungle — Web3 Arena</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Outfit:wght@400;600&family=Azeret+Mono:wght@400;700&display=swap" rel="stylesheet">
   <style>
@@ -130,7 +130,7 @@
 
   <script>
 // ============================================================
-//  MONKEY JUMP — Web3 Edition with postMessage Perk Bridge
+//  BAXC JUNGLE — Web3 Edition with postMessage Perk Bridge
 // ============================================================
 
 // --- PERK SYSTEM (received from parent via postMessage) ---
@@ -234,7 +234,7 @@ const images = {};
 let assetsLoaded = 0;
 const assetList = [
   ['bg',        './assets/jungle_bg.png'],
-  ['monkey',    './assets/monkey_sprite.png'],
+  ['player',    './assets/player_sprite.png'],
   ['banana',    './assets/banana_sprite.png'],
   ['obstacles', './assets/obstacles_sprite.png'],
   ['powerups',  './assets/powerups_sprite.png'],
@@ -384,10 +384,10 @@ function drawPlayer() {
     for (let i = 1; i <= 3; i++) {
       ctx.save();
       ctx.globalAlpha = 0.15 * (4 - i);
-      if (images.monkey && images.monkey.complete) {
-        const fw = images.monkey.naturalWidth / 4;
-        const fh = images.monkey.naturalHeight;
-        ctx.drawImage(images.monkey, p.animFrame * fw, 0, fw, fh,
+      if (images.player && images.player.complete) {
+        const fw = images.player.naturalWidth / 4;
+        const fh = images.player.naturalHeight;
+        ctx.drawImage(images.player, p.animFrame * fw, 0, fw, fh,
           p.x - i * 18, p.y, p.w, p.h);
       }
       ctx.restore();
@@ -422,9 +422,9 @@ function drawPlayer() {
   ctx.fill();
   ctx.restore();
 
-  if (images.monkey && images.monkey.complete && images.monkey.naturalWidth > 0) {
-    const totalW = images.monkey.naturalWidth;
-    const totalH = images.monkey.naturalHeight;
+  if (images.player && images.player.complete && images.player.naturalWidth > 0) {
+    const totalW = images.player.naturalWidth;
+    const totalH = images.player.naturalHeight;
     const frameW = totalW / 4;
     const frameH = totalH;
 
@@ -467,15 +467,15 @@ function drawPlayer() {
     // Draw with drop-shadow for pop
     ctx.save();
     ctx.filter = 'drop-shadow(0px 0px 6px rgba(0,0,0,1)) drop-shadow(0px 0px 12px rgba(0,0,0,0.8))';
-    ctx.drawImage(images.monkey, col * frameW, 0, frameW, frameH,
+    ctx.drawImage(images.player, col * frameW, 0, frameW, frameH,
                   drawX, drawY, drawW, drawH);
     ctx.restore();
     // Main sprite over shadow
-    ctx.drawImage(images.monkey, col * frameW, 0, frameW, frameH,
+    ctx.drawImage(images.player, col * frameW, 0, frameW, frameH,
                   drawX, drawY, drawW, drawH);
 
   } else {
-    // Fallback rectangle monkey
+    // Fallback rectangle player
     ctx.fillStyle = '#c8854a';
     ctx.fillRect(p.x, p.y, p.w, p.h);
     ctx.fillStyle = '#000';
@@ -667,17 +667,17 @@ function drawTitle() {
   ctx.fillStyle = '#FFD700';
   ctx.font = '28px "Press Start 2P"';
   ctx.textAlign = 'center';
-  ctx.fillText('MONKEY JUMP', LOGIC_W/2, 130);
+  ctx.fillText('BAXC JUNGLE', LOGIC_W/2, 130);
   ctx.fillStyle = '#7ab82b';
   ctx.font = '11px "Press Start 2P"';
-  ctx.fillText('BAXC Web3 Edition', LOGIC_W/2, 160);
+  ctx.fillText('Web3 Edition', LOGIC_W/2, 160);
   ctx.fillStyle = '#888';
   ctx.font = '9px "Press Start 2P"';
   ctx.fillText('Collect bananas · Dodge falling objects', LOGIC_W/2, 185);
 
-  if (images.monkey && images.monkey.complete && images.monkey.naturalWidth > 0) {
-    const fw = images.monkey.naturalWidth / 4;
-    ctx.drawImage(images.monkey, 0, 0, fw, images.monkey.naturalHeight, LOGIC_W/2 - 60, 200, 80, 80);
+  if (images.player && images.player.complete && images.player.naturalWidth > 0) {
+    const fw = images.player.naturalWidth / 4;
+    ctx.drawImage(images.player, 0, 0, fw, images.player.naturalHeight, LOGIC_W/2 - 60, 200, 80, 80);
   }
   if (perksReceived) {
     ctx.fillStyle = '#7ab82b';

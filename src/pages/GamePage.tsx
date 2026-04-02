@@ -7,7 +7,7 @@ import { useNFTGate } from '../hooks/useNFTGate';
 import { useLeaderboard } from '../hooks/useLeaderboard';
 import { PerkBadges } from '../components/PerkBadges';
 import { TraitConfigModal } from '../components/TraitConfigModal';
-import { MonkeyGame } from '../game/MonkeyGame';
+import { JungleGame } from '../game/JungleGame';
 import { GameOverModal } from '../components/GameOverModal';
 import { ADMIN_ADDRESSES } from '../config';
 import type { GameOverData } from '../types';
@@ -127,8 +127,8 @@ export function GamePage() {
           <div className="mb-8 relative inline-block">
             <div className="absolute inset-0 bg-danger/10 blur-2xl rounded-full scale-125 opacity-30" />
             <img
-              src="/game/assets/monkey_sprite.png"
-              alt="Monkey"
+              src="/game/assets/player_sprite.png"
+              alt="BAXC Jungle Player"
               className="w-20 h-20 mx-auto opacity-30 grayscale relative z-10"
               style={{ imageRendering: 'pixelated', objectFit: 'none', objectPosition: '0 0' }}
             />
@@ -164,7 +164,7 @@ export function GamePage() {
       {/* Header - Hidden on mobile during active gameplay or if screen is short */}
       <header className={`flex items-center justify-between px-6 py-4 bg-charcoal-dark border-b border-gold/10 flex-shrink-0 z-20 transition-all duration-300 ${shouldHideUI ? 'hidden' : ''}`}>
         <div className="flex items-center gap-6">
-          <h1 className="font-pixel text-[10px] text-gold gold-glow tracking-tighter">BAXC / ASCENT</h1>
+          <h1 className="font-pixel text-[10px] text-gold gold-glow tracking-tighter uppercase whitespace-nowrap">BAXC Jungle</h1>
           <div className="hidden sm:flex h-4 w-px bg-gold/10" />
           <span className="hidden sm:inline font-mono text-[10px] text-gray-500 tracking-wider">
             {herotag ? `@${herotag}` : `${address.slice(0, 10)}...${address.slice(-10)}`}
@@ -219,7 +219,7 @@ export function GamePage() {
       <main className="flex-1 relative flex items-center justify-center p-0 sm:p-0 overflow-hidden min-h-0 z-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(212,175,55,0.02)_0%,transparent_80%)] pointer-events-none" />
         <div className="w-full h-full max-w-full max-h-full sm:max-w-3xl sm:max-h-[900px] shadow-[0_0_100px_rgba(0,0,0,0.5)] sm:border border-gold/10 sm:rounded-2xl overflow-hidden relative">
-          <MonkeyGame
+          <JungleGame
             perks={perks}
             address={address}
             herotag={herotag}
