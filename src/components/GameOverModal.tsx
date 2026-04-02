@@ -27,12 +27,9 @@ export function GameOverModal({ isOpen, data, perks, onNewGame, onReturnToMenu }
           <div className="landscape:flex landscape:items-center landscape:gap-8 landscape:text-left">
             {/* Header section — simplified for space in landscape */}
             <div className="landscape:flex-1 landscape:border-r landscape:border-gold/10 landscape:pr-8">
-              <h2 className="font-pixel text-xl sm:text-2xl text-danger gold-glow mb-1 uppercase tracking-tighter">
+              <h2 className="font-pixel text-lg sm:text-xl text-danger gold-glow mb-1 uppercase tracking-tighter">
                 Game Over
               </h2>
-              <p className="font-mono text-[7px] sm:text-[9px] text-gray-500 tracking-[0.3em] uppercase mb-3 sm:mb-8">
-                Mission Terminated
-              </p>
 
               {/* Stats Grid */}
               <div className="grid grid-cols-1 gap-4 sm:gap-6 mb-4 sm:mb-10">
@@ -75,7 +72,7 @@ export function GameOverModal({ isOpen, data, perks, onNewGame, onReturnToMenu }
                 onClick={onNewGame}
                 className="btn-pixel w-full py-3 sm:py-5 text-xs sm:text-sm active:scale-95 transition-transform"
               >
-                Start New Mission
+                Try Again
               </button>
               <button
                 onClick={onReturnToMenu}
