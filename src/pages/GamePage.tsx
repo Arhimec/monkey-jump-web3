@@ -72,10 +72,19 @@ export function GamePage() {
     }
   };
 
-  // Determine if we should show site navigation/perks
-  // On mobile, hide them during active gameplay to maximize space
   const isPlaying = !lastScore;
   const showNav = !isPlaying; // Simplified for now: always show nav if not playing
+
+  // Mobile optimization: Hide UI if strictly playing on small screens OR if the viewport is very short (landscape mobile)
+  const [isShortScreen, setIsShortScreen] = useState(window.innerHeight < 500);
+
+  useState(() => {
+    const handleResize = () => setIsShortScreen(window.innerHeight < 500);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  });
+
+  const shouldHideUI = isPlaying && (isShortScreen || window.innerWidth < 640);
 
   if (loading) {
     return (
@@ -152,8 +161,8 @@ export function GamePage() {
 
   return (
     <div className="h-screen-safe overflow-hidden flex flex-col bg-charcoal-dark">
-      {/* Header - Hidden on mobile during active gameplay */}
-      <header className={`flex items-center justify-between px-6 py-4 bg-charcoal-dark border-b border-gold/10 flex-shrink-0 z-20 transition-all duration-300 ${isPlaying ? 'max-sm:hidden' : ''}`}>
+      {/* Header - Hidden on mobile during active gameplay or if screen is short */}
+      <header className={`flex items-center justify-between px-6 py-4 bg-charcoal-dark border-b border-gold/10 flex-shrink-0 z-20 transition-all duration-300 ${shouldHideUI ? 'hidden' : ''}`}>
         <div className="flex items-center gap-6">
           <h1 className="font-pixel text-[10px] text-gold gold-glow tracking-tighter">BAXC / ASCENT</h1>
           <div className="hidden sm:flex h-4 w-px bg-gold/10" />
@@ -195,9 +204,9 @@ export function GamePage() {
         </div>
       </header>
 
-      {/* Perks Ribbon - Hidden on mobile during active gameplay */}
+      {/* Perks Ribbon - Hidden on mobile during active gameplay or if screen is short */}
       {activePerks.length > 0 && (
-        <div className={`px-6 py-2 bg-gold/5 border-b border-gold/10 flex-shrink-0 z-10 overflow-x-auto transition-all duration-300 ${isPlaying ? 'max-sm:hidden' : ''}`}>
+        <div className={`px-6 py-2 bg-gold/5 border-b border-gold/10 flex-shrink-0 z-10 overflow-x-auto transition-all duration-300 ${shouldHideUI ? 'hidden' : ''}`}>
           <div className="flex items-center gap-4 min-w-max">
             <span className="font-pixel text-[8px] text-gold/40 tracking-wider">ACTIVE PERKS</span>
             <div className="h-3 w-px bg-gold/10" />
@@ -207,9 +216,9 @@ export function GamePage() {
       )}
 
       {/* Game Viewport */}
-      <main className="flex-1 relative flex items-center justify-center p-0 sm:p-6 overflow-hidden min-h-0 z-0">
+      <main className="flex-1 relative flex items-center justify-center p-0 sm:p-0 overflow-hidden min-h-0 z-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(212,175,55,0.02)_0%,transparent_80%)] pointer-events-none" />
-        <div className="w-full h-full max-w-3xl max-h-[900px] shadow-[0_0_100px_rgba(0,0,0,0.5)] border-x md:border border-gold/10 md:rounded-2xl overflow-hidden relative">
+        <div className="w-full h-full max-w-full max-h-full sm:max-w-3xl sm:max-h-[900px] shadow-[0_0_100px_rgba(0,0,0,0.5)] sm:border border-gold/10 sm:rounded-2xl overflow-hidden relative">
           <MonkeyGame
             perks={perks}
             address={address}

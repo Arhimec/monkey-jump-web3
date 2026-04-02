@@ -51,7 +51,8 @@ export function MonkeyGame({ perks, address, herotag, onGameOver }: MonkeyGamePr
       <div
         className="w-full h-full sm:max-h-[506px] sm:max-w-[900px] sm:aspect-[900/506]"
         style={{
-          /* On small screens, we want to fill as much as possible without strictly locking ratio if it clips */
+          /* On small screens, we want it to be truly fluid to match the new engine logic */
+          maxWidth: '100%',
           maxHeight: '100%',
         }}
       >
