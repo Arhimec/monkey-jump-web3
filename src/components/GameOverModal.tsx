@@ -26,64 +26,64 @@ export function GameOverModal({ isOpen, data, perks, onNewGame, onReturnToMenu }
         <div className="p-4 sm:p-8 text-center overflow-y-auto">
           <div className="landscape:flex landscape:items-center landscape:gap-8 landscape:text-left">
             {/* Header section — simplified for space in landscape */}
-            <div className="landscape:flex-1">
-              <h2 className="font-pixel text-xl sm:text-2xl text-danger gold-glow mb-1 sm:mb-2 uppercase tracking-tighter">
+            <div className="landscape:flex-1 landscape:border-r landscape:border-gold/10 landscape:pr-8">
+              <h2 className="font-pixel text-xl sm:text-2xl text-danger gold-glow mb-1 uppercase tracking-tighter">
                 Game Over
               </h2>
-              <p className="font-mono text-[8px] sm:text-[10px] text-gray-500 tracking-[0.3em] uppercase mb-4 sm:mb-10">
+              <p className="font-mono text-[7px] sm:text-[9px] text-gray-500 tracking-[0.3em] uppercase mb-3 sm:mb-8">
                 Mission Terminated
               </p>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 gap-6 mb-10">
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gold/5 blur-xl group-hover:bg-gold/10 transition-colors rounded-full" />
-              <div className="relative">
-                <span className="block font-pixel text-[8px] sm:text-[9px] text-gold/40 tracking-widest uppercase mb-1 sm:mb-2">Final Score</span>
-                <span className="block font-pixel text-3xl sm:text-4xl text-gold gold-glow leading-none">
-                  {finalScore.toLocaleString()}
-                </span>
-                {perks.score_multiplier > 1 && (
-                  <span className="block font-mono text-[7px] sm:text-[8px] text-jungle-green mt-1 sm:mt-2 opacity-80 uppercase">
-                    Includes {perks.score_multiplier}x Multiplier
-                  </span>
-                )}
+              {/* Stats Grid */}
+              <div className="grid grid-cols-1 gap-4 sm:gap-6 mb-4 sm:mb-10">
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-gold/5 blur-xl group-hover:bg-gold/10 transition-colors rounded-full" />
+                  <div className="relative">
+                    <span className="block font-pixel text-[8px] sm:text-[9px] text-gold/40 tracking-widest uppercase mb-1">Final Score</span>
+                    <span className="block font-pixel text-3xl sm:text-4xl text-gold gold-glow leading-none">
+                      {finalScore.toLocaleString()}
+                    </span>
+                    {perks.score_multiplier > 1 && (
+                      <span className="block font-mono text-[7px] sm:text-[8px] text-jungle-green mt-1 opacity-80 uppercase">
+                        Includes {perks.score_multiplier}x Multiplier
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                  <div className="glass-panel bg-white/5 border-white/5 p-3 sm:p-4 py-2 sm:py-3">
+                    <span className="block font-pixel text-[7px] sm:text-[8px] text-gray-500 tracking-wider mb-1 sm:mb-2 uppercase">Bananas</span>
+                    <div className="flex items-center justify-center gap-2">
+                      <span className="text-base sm:text-xl">🍌</span>
+                      <span className="font-pixel text-base sm:text-lg text-white">{data.bananas}</span>
+                    </div>
+                  </div>
+                  <div className="glass-panel bg-white/5 border-white/5 p-3 sm:p-4 py-2 sm:py-3">
+                    <span className="block font-pixel text-[7px] sm:text-[8px] text-gray-500 tracking-wider mb-1 sm:mb-2 uppercase">Distance</span>
+                    <div className="flex items-center justify-center gap-2">
+                      <span className="font-mono text-base sm:text-lg text-white font-bold">{data.distance}m</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 sm:gap-4">
-              <div className="glass-panel bg-white/5 border-white/5 p-3 sm:p-4 py-2 sm:py-3">
-                <span className="block font-pixel text-[7px] sm:text-[8px] text-gray-500 tracking-wider mb-1 sm:mb-2 uppercase">Bananas</span>
-                <div className="flex items-center justify-center gap-2">
-                  <span className="text-base sm:text-xl">🍌</span>
-                  <span className="font-pixel text-base sm:text-lg text-white">{data.bananas}</span>
-                </div>
-              </div>
-              <div className="glass-panel bg-white/5 border-white/5 p-3 sm:p-4 py-2 sm:py-3">
-                <span className="block font-pixel text-[7px] sm:text-[8px] text-gray-500 tracking-wider mb-1 sm:mb-2 uppercase">Distance</span>
-                <div className="flex items-center justify-center gap-2">
-                  <span className="font-mono text-base sm:text-lg text-white font-bold">{data.distance}m</span>
-                </div>
-              </div>
+            {/* Actions section — moves right in landscape */}
+            <div className="landscape:flex-1 flex flex-col gap-2.5 sm:gap-4 mt-4 landscape:mt-0 landscape:justify-center">
+              <button
+                onClick={onNewGame}
+                className="btn-pixel w-full py-3 sm:py-5 text-xs sm:text-sm active:scale-95 transition-transform"
+              >
+                Start New Mission
+              </button>
+              <button
+                onClick={onReturnToMenu}
+                className="btn-danger w-full py-2.5 sm:py-4 text-[8px] sm:text-[10px] uppercase font-mono tracking-widest opacity-70 hover:opacity-100 transition-opacity"
+              >
+                Return to Menu
+              </button>
             </div>
-          </div>
-          </div>
-
-          {/* Actions section — moves right in landscape */}
-          <div className="landscape:flex-1 flex flex-col gap-3 sm:gap-4 mt-6 landscape:mt-0">
-            <button
-              onClick={onNewGame}
-              className="btn-pixel w-full py-4 sm:py-5 text-xs sm:text-sm active:scale-95 transition-transform"
-            >
-              Start New Mission
-            </button>
-            <button
-              onClick={onReturnToMenu}
-              className="btn-danger w-full py-3 sm:py-4 text-[9px] sm:text-[10px] uppercase font-mono tracking-widest opacity-70 hover:opacity-100 transition-opacity"
-            >
-              Return to Menu
-            </button>
-          </div>
           </div>
         </div>
 
