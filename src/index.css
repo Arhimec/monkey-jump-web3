@@ -8,11 +8,13 @@
     overflow: hidden;
     overscroll-behavior: none;
     height: 100%;
+    height: 100dvh;
   }
   body {
     @apply bg-charcoal text-white/90;
     font-family: "Outfit", sans-serif;
     height: 100%;
+    height: 100dvh;
     overflow: hidden;
     overscroll-behavior: none;
   }
@@ -64,5 +66,10 @@
 
   .gold-glow {
     filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.4));
+  }
+
+  .h-screen-safe {
+    height: 100vh;
+    height: 100dvh;
   }
 }

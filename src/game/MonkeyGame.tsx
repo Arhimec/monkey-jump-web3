@@ -49,13 +49,10 @@ export function MonkeyGame({ perks, address, herotag, onGameOver }: MonkeyGamePr
     */
     <div className="w-full flex-1 flex items-center justify-center overflow-hidden">
       <div
-        className="w-full h-full"
+        className="w-full h-full sm:max-h-[506px] sm:max-w-[900px] sm:aspect-[900/506]"
         style={{
-          /* On large screens limit to game's natural dimensions */
-          maxWidth:  '900px',
-          maxHeight: '506px',
-          /* On smaller screens: keep 900:506 ratio but fill available space */
-          aspectRatio: '900 / 506',
+          /* On small screens, we want to fill as much as possible without strictly locking ratio if it clips */
+          maxHeight: '100%',
         }}
       >
         <iframe

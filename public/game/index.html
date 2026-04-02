@@ -198,7 +198,8 @@ function resize() {
 
   // Show landscape hint only on very small portrait screens (< 480px wide, portrait)
   const hint = document.getElementById('landscape-hint');
-  if (availW < 480 && availH > availW) {
+  const isPortrait = availH > availW;
+  if (availW < 480 && isPortrait) {
     hint.classList.add('active');
   } else {
     hint.classList.remove('active');
