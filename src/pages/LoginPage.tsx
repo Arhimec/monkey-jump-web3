@@ -7,11 +7,14 @@ export function LoginPage() {
   const isLoggedIn = useGetIsLoggedIn();
   const navigate   = useNavigate();
 
-  useEffect(() => {
-    if (isLoggedIn) navigate('/game');
-  }, [isLoggedIn, navigate]);
+  // Removed automatic redirect to /game to allow it to function as a "Menu"
+  // when returning from GamePage.
 
   const openPanel = () => {
+    if (isLoggedIn) {
+      navigate('/game');
+      return;
+    }
     UnlockPanelManager.init({
       loginHandler: () => navigate('/game'),
       onClose: async () => { /* closed without login */ },
