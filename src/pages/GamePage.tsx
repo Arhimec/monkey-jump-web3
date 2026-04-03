@@ -9,18 +9,39 @@ import { PerkBadges } from '../components/PerkBadges';
 import { TraitConfigModal } from '../components/TraitConfigModal';
 import { JungleGame } from '../game/JungleGame';
 import { GameOverModal } from '../components/GameOverModal';
-import { ADMIN_ADDRESSES } from '../config';
-import type { GameOverData } from '../types';
+import { NFTSelector } from '../components/NFTSelector';
+import { ADMIN_ADDRESSES, computePerks, parseNFTAttributes } from '../config';
+import type { GameOverData, PlayerPerks, PerkLabel } from '../types';
 
 export function GamePage() {
   const isLoggedIn = useGetIsLoggedIn();
   const { address } = useGetAccountInfo();
   const navigate = useNavigate();
-  const { loading, error, hasAccess, perks, activePerks, herotag } = useNFTGate(address);
+  const { loading, error, hasAccess, nfts, perks: basePerks, activePerks: baseActivePerks, herotag } = useNFTGate(address);
   const { submitScore } = useLeaderboard();
+  
+  const [selectedNftIds, setSelectedNftIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem(`baxc_squad_${address}`);
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
+  const [showSelector, setShowSelector] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
   const [lastScore, setLastScore] = useState<GameOverData | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Compute squad perks based on selected IDs
+  const { perks, activePerks } = (() => {
+    if (selectedNftIds.length === 0 || !nfts || nfts.length === 0) {
+      return { perks: basePerks, activePerks: baseActivePerks };
+    }
+    
+    // Flatten traits from all selected NFTs
+    const selectedNfts = nfts.filter(n => selectedNftIds.includes(n.identifier));
+    const allTraits = selectedNfts.flatMap(parseNFTAttributes);
+    return computePerks(allTraits);
+  })();
 
   const isAdmin = ADMIN_ADDRESSES.includes(address);
 
@@ -72,8 +93,14 @@ export function GamePage() {
     }
   };
 
-  const isPlaying = !lastScore;
-  const showNav = !isPlaying; // Simplified for now: always show nav if not playing
+  const isPlaying = !lastScore && !showSelector;
+  const showNav = !isPlaying;
+
+  // Selection auto-logic: 
+  // 1. If only 1 NFT, skip selector
+  // 2. If many but none selected, show selector
+  const isSquadReady = selectedNftIds.length > 0 || (nfts && nfts.length === 1);
+  const shouldShowSelector = hasAccess && !loading && !isSquadReady || showSelector;
 
   // Mobile optimization: Hide UI if strictly playing on small screens OR if the viewport is very short (landscape mobile)
   const [isShortScreen, setIsShortScreen] = useState(window.innerHeight < 500);
@@ -84,7 +111,15 @@ export function GamePage() {
     return () => window.removeEventListener('resize', handleResize);
   });
 
-  const shouldHideUI = isPlaying && (isShortScreen || window.innerWidth < 640);
+  const shouldHideUI = isPlaying && !shouldShowSelector && (isShortScreen || window.innerWidth < 640);
+
+  const handleToggleNft = (id: string) => {
+    setSelectedNftIds(prev => {
+      const next = prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id];
+      localStorage.setItem(`baxc_squad_${address}`, JSON.stringify(next));
+      return next;
+    });
+  };
 
   if (loading) {
     return (
@@ -173,8 +208,16 @@ export function GamePage() {
         
         <div className="flex items-center gap-4">
           <button
-            onClick={toggleFullscreen}
+            onClick={() => setShowSelector(true)}
             className="flex items-center gap-2 font-mono text-[9px] text-gold/60 hover:text-gold transition-colors uppercase tracking-[0.1em]"
+            title="Update your squad lineup"
+          >
+            [Change Squad]
+          </button>
+          
+          <button
+            onClick={toggleFullscreen}
+            className="flex items-center gap-2 font-mono text-[9px] text-gray-500 hover:text-gold transition-colors uppercase tracking-[0.1em]"
             title="Toggle Fullscreen"
           >
             {isFullscreen ? '[Exit Full]' : '[Fullscreen]'}
@@ -253,6 +296,15 @@ export function GamePage() {
 
       <TraitConfigModal isOpen={showConfig} onClose={() => setShowConfig(false)} />
       
+      {shouldShowSelector && (
+        <NFTSelector
+          nfts={nfts}
+          selectedIds={selectedNftIds}
+          onToggle={handleToggleNft}
+          onConfirm={() => setShowSelector(false)}
+        />
+      )}
+
       {lastScore && (
         <GameOverModal
           isOpen={!!lastScore}
