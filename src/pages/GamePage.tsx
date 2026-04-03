@@ -6,10 +6,9 @@ import { ProviderFactory } from '@multiversx/sdk-dapp/out/providers/ProviderFact
 import { useNFTGate } from '../hooks/useNFTGate';
 import { useLeaderboard } from '../hooks/useLeaderboard';
 import { PerkBadges } from '../components/PerkBadges';
-import { TraitConfigModal } from '../components/TraitConfigModal';
 import { JungleGame } from '../game/JungleGame';
 import { GameOverModal } from '../components/GameOverModal';
-import { NFTSelector } from '../components/NFTSelector';
+import { ConfigurationModal } from '../components/ConfigurationModal';
 import { ADMIN_ADDRESSES, computePerks, parseNFTAttributes } from '../config';
 import type { GameOverData, PlayerPerks, PerkLabel } from '../types';
 
@@ -26,8 +25,7 @@ export function GamePage() {
       return saved ? JSON.parse(saved) : [];
     } catch { return []; }
   });
-  const [showSelector, setShowSelector] = useState(false);
-  const [showConfig, setShowConfig] = useState(false);
+  const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [lastScore, setLastScore] = useState<GameOverData | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -93,14 +91,14 @@ export function GamePage() {
     }
   };
 
-  const isPlaying = !lastScore && !showSelector;
+  const isPlaying = !lastScore && !isConfigOpen;
   const showNav = !isPlaying;
 
   // Selection auto-logic: 
-  // 1. If only 1 NFT, skip selector
-  // 2. If many but none selected, show selector
+  // 1. If only 1 NFT, skip initial modal
+  // 2. If many but none selected, show modal
   const isSquadReady = selectedNftIds.length > 0 || (nfts && nfts.length === 1);
-  const shouldShowSelector = hasAccess && !loading && !isSquadReady || showSelector;
+  const shouldShowModal = (hasAccess && !loading && !isSquadReady) || isConfigOpen;
 
   // Mobile optimization: Hide UI if strictly playing on small screens OR if the viewport is very short (landscape mobile)
   const [isShortScreen, setIsShortScreen] = useState(window.innerHeight < 500);
@@ -111,7 +109,7 @@ export function GamePage() {
     return () => window.removeEventListener('resize', handleResize);
   });
 
-  const shouldHideUI = isPlaying && !shouldShowSelector && (isShortScreen || window.innerWidth < 640);
+  const shouldHideUI = isPlaying && !shouldShowModal && (isShortScreen || window.innerWidth < 640);
 
   const handleToggleNft = (id: string) => {
     setSelectedNftIds(prev => {
@@ -208,11 +206,11 @@ export function GamePage() {
         
         <div className="flex items-center gap-4">
           <button
-            onClick={() => setShowSelector(true)}
-            className="flex items-center gap-2 font-mono text-[9px] text-gold/60 hover:text-gold transition-colors uppercase tracking-[0.1em]"
-            title="Update your squad lineup"
+            onClick={() => setIsConfigOpen(true)}
+            className="flex items-center gap-2 font-mono text-[9px] text-gold shadow-[0_0_10px_rgba(212,175,55,0.1)] hover:text-white transition-all duration-300 uppercase tracking-[0.1em] bg-gold/10 px-3 py-1.5 rounded border border-gold/20"
+            title="Configure your squad and system settings"
           >
-            [Change Squad]
+            [Configuration]
           </button>
           
           <button
@@ -223,15 +221,6 @@ export function GamePage() {
             {isFullscreen ? '[Exit Full]' : '[Fullscreen]'}
           </button>
           
-          {isAdmin && (
-            <button
-              onClick={() => setShowConfig(true)}
-              className="font-mono text-[9px] text-gray-500 hover:text-gold transition-colors uppercase tracking-[0.1em]"
-              title="Admin Terminal"
-            >
-              [Admin]
-            </button>
-          )}
           <button
             onClick={() => navigate('/leaderboard')}
             className="font-mono text-[9px] text-gray-500 hover:text-gold transition-colors uppercase tracking-[0.1em]"
@@ -294,14 +283,14 @@ export function GamePage() {
         </div>
       )}
 
-      <TraitConfigModal isOpen={showConfig} onClose={() => setShowConfig(false)} />
-      
-      {shouldShowSelector && (
-        <NFTSelector
+      {shouldShowModal && (
+        <ConfigurationModal
+          isOpen={shouldShowModal}
+          onClose={() => setIsConfigOpen(false)}
           nfts={nfts}
           selectedIds={selectedNftIds}
           onToggle={handleToggleNft}
-          onConfirm={() => setShowSelector(false)}
+          isAdmin={isAdmin}
         />
       )}
 
