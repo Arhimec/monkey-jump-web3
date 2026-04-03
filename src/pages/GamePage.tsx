@@ -79,6 +79,16 @@ export function GamePage() {
     setLastScore(null);
   };
 
+  const handleChangeSquad = () => {
+    setLastScore(null);
+    setIsConfigOpen(true);
+  };
+
+  const handleReturnToMenu = () => {
+    setLastScore(null);
+    setIsConfigOpen(true);
+  };
+
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch((err) => {
@@ -300,7 +310,8 @@ export function GamePage() {
           data={lastScore}
           perks={perks}
           onNewGame={handleNewGame}
-          onReturnToMenu={() => navigate('/')}
+          onChangeSquad={handleChangeSquad}
+          onReturnToMenu={handleReturnToMenu}
         />
       )}
     </div>

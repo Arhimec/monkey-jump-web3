@@ -5,10 +5,11 @@ interface GameOverModalProps {
   data: GameOverData;
   perks: PlayerPerks;
   onNewGame: () => void;
+  onChangeSquad: () => void;
   onReturnToMenu: () => void;
 }
 
-export function GameOverModal({ isOpen, data, perks, onNewGame, onReturnToMenu }: GameOverModalProps) {
+export function GameOverModal({ isOpen, data, perks, onNewGame, onChangeSquad, onReturnToMenu }: GameOverModalProps) {
   if (!isOpen) return null;
 
   const finalScore = Math.floor(data.score * perks.score_multiplier);
@@ -73,6 +74,12 @@ export function GameOverModal({ isOpen, data, perks, onNewGame, onReturnToMenu }
                 className="btn-pixel w-full py-3 sm:py-5 text-xs sm:text-sm active:scale-95 transition-transform"
               >
                 Try Again
+              </button>
+              <button
+                onClick={onChangeSquad}
+                className="bg-gold/10 hover:bg-gold/20 border border-gold/30 text-gold font-pixel text-[9px] sm:text-[10px] w-full py-3 sm:py-4 transition-all duration-300 uppercase tracking-widest"
+              >
+                Change Squad
               </button>
               <button
                 onClick={onReturnToMenu}
